@@ -1,0 +1,26 @@
+[project]
+name = "rl-debug-bench"
+version = "0.1.0"
+description = "An RL environment that evaluates language models on diagnosing and fixing silent bugs in reinforcement learning training code."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "torch==2.2.1",
+    "gymnasium==0.27.1",
+    "numpy==1.26.4",
+    "tensorboard==2.11.2",
+    "tyro==1.0.15",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
