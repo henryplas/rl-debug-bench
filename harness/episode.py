@@ -13,6 +13,7 @@ import yaml
 
 from harness.container import EpisodeContainer
 from harness.tools import ToolBox, tool_schemas_for_arm
+from scoring.integrity import snapshot_hash
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REGISTRY_PATH = os.path.join(REPO_ROOT, "bugs", "registry.yaml")
@@ -85,6 +86,12 @@ def run_episode(
     status = None
     start = time.time()
 
+    # Rule 3: scoring code lives outside the agent's writable directory. Snapshot
+    # its hash before the agent gets any access, so scoring can detect tampering
+    # even though the agent's tools can't reach these paths in the first place.
+    integrity_snapshot_before = snapshot_hash()
+    final_file_content = None
+
     with EpisodeContainer(patch_relpath=entry["patch"]) as container:
         toolbox = ToolBox(container, arm=arm, episode_seed=episode_seed)
         messages = []
@@ -143,6 +150,11 @@ def run_episode(
                 status = "WALL_CLOCK_CAP"
                 break
 
+        # Read the final file before teardown deletes the workspace; scoring
+        # needs this content and it doesn't survive the container's lifetime.
+        with open(os.path.join(container.host_workspace, "ppo_cartpole.py")) as f:
+            final_file_content = f.read()
+
     wall_clock_s = time.time() - start
     status = status or "ERROR"
 
@@ -155,6 +167,8 @@ def run_episode(
     transcript["turns_used"] = turn
     transcript["wall_clock_s"] = wall_clock_s
     transcript["tool_call_counts"] = dict(tool_call_counts)
+    transcript["integrity_snapshot_before"] = integrity_snapshot_before
+    transcript["final_file_content"] = final_file_content
     with open(transcript_path, "w") as f:
         json.dump(transcript, f, indent=2, default=str)
 

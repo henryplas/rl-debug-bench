@@ -19,9 +19,13 @@ import sys
 import tempfile
 
 import yaml
-from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, REPO_ROOT)  # so `python calibration/build_baselines.py` can `import harness`
+
+from harness.metrics import final_window_scalar_mean  # noqa: E402
+from harness.tools import NUM_ENVS, NUM_STEPS  # noqa: E402
+
 BASE_SCRIPT_NAME = "ppo_cartpole.py"
 BASE_SCRIPT = os.path.join(REPO_ROOT, "base", BASE_SCRIPT_NAME)
 REGISTRY_PATH = os.path.join(REPO_ROOT, "bugs", "registry.yaml")
@@ -59,7 +63,7 @@ def run_training(script_path, seed, total_timesteps):
             "--seed", str(seed),
             "--no-cuda", "--no-track", "--no-capture-video",
             "--total-timesteps", str(total_timesteps),
-            "--num-envs", "4", "--num-steps", "128",
+            "--num-envs", str(NUM_ENVS), "--num-steps", str(NUM_STEPS),
             "--num-minibatches", "4", "--update-epochs", "4",
             "--exp-name", "calib",
         ]
@@ -70,17 +74,10 @@ def run_training(script_path, seed, total_timesteps):
         event_files = glob.glob(os.path.join(run_dir, "runs", "*", "events.out.tfevents.*"))
         if not event_files:
             raise RuntimeError(f"no tensorboard event file produced for seed={seed}")
-        ea = EventAccumulator(event_files[0])
-        ea.Reload()
-        scalars = ea.Scalars("charts/episodic_return")
-        if not scalars:
-            raise RuntimeError(f"no episodic_return scalars recorded for seed={seed}")
 
-        cutoff = (1.0 - FINAL_WINDOW_FRAC) * total_timesteps
-        window = [s.value for s in scalars if s.step >= cutoff]
-        if not window:
-            window = [scalars[-1].value]
-        return sum(window) / len(window)
+        return final_window_scalar_mean(
+            event_files[0], "charts/episodic_return", total_timesteps, window_frac=FINAL_WINDOW_FRAC
+        )
 
 
 def mean_std(values):

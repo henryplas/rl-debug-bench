@@ -24,6 +24,25 @@ METRIC_KEYS = [
 ]
 
 
+def final_window_scalar_mean(event_file, key, total_timesteps, window_frac=0.2):
+    """Mean of a scalar over the last window_frac of total_timesteps, smoothing
+    per-episode noise instead of reading a single final value. Shared between
+    calibration/build_baselines.py and scoring/outcome.py so "final
+    performance" means exactly the same thing in both places -- the outcome
+    formula's clean/broken baselines and an agent's achieved score are only
+    comparable if they're computed identically."""
+    ea = EventAccumulator(event_file)
+    ea.Reload()
+    scalars = ea.Scalars(key)
+    if not scalars:
+        raise ValueError(f"no scalars recorded for key={key!r} in {event_file}")
+    cutoff = (1.0 - window_frac) * total_timesteps
+    window = [s.value for s in scalars if s.step >= cutoff]
+    if not window:
+        window = [scalars[-1].value]
+    return sum(window) / len(window)
+
+
 class MetricsStore:
     def __init__(self, host_workspace):
         self.host_workspace = host_workspace

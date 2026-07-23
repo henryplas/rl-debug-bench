@@ -22,12 +22,19 @@ IMAGE_NAME = "rl-debug-bench:v0"
 WORKSPACE_MOUNT = "/workspace"
 
 
-def _build_workspace(patch_relpath):
-    """Create a host-side temp dir containing ppo_cartpole.py, with the given
-    bug patch applied (pristine if patch_relpath is None). Returns the dir."""
+def build_workspace(patch_relpath=None, source_path=None):
+    """Create a host-side temp dir containing ppo_cartpole.py. Exactly one of:
+    - patch_relpath: apply this bug patch to the pristine base script (or
+      pristine, if patch_relpath is None and source_path is also None).
+    - source_path: copy this exact file in verbatim (used by scoring to
+      re-run an agent's submitted file, sandboxed the same way an episode is).
+    Returns the dir."""
+    if patch_relpath is not None and source_path is not None:
+        raise ValueError("pass at most one of patch_relpath, source_path")
+
     host_dir = tempfile.mkdtemp(prefix="rl-debug-bench-ws-")
     dest = os.path.join(host_dir, "ppo_cartpole.py")
-    shutil.copy(BASE_SCRIPT, dest)
+    shutil.copy(source_path if source_path is not None else BASE_SCRIPT, dest)
     os.chmod(dest, 0o644)
 
     if patch_relpath is not None:
@@ -48,8 +55,8 @@ def _build_workspace(patch_relpath):
 class EpisodeContainer:
     """One Docker container backing a single episode's workspace."""
 
-    def __init__(self, patch_relpath=None):
-        self.host_workspace = _build_workspace(patch_relpath)
+    def __init__(self, patch_relpath=None, source_path=None):
+        self.host_workspace = build_workspace(patch_relpath=patch_relpath, source_path=source_path)
         self.client = docker.from_env()
         self.container = self.client.containers.run(
             IMAGE_NAME,
