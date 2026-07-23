@@ -12,11 +12,16 @@ dependencies = [
     "tensorboard==2.11.2",
     "tyro==1.0.15",
     "pyyaml==6.0.2",
+    "docker==7.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
+]
+eval = [
+    "anthropic>=0.40",
+    "openai>=1.50",
 ]
 
 [build-system]
