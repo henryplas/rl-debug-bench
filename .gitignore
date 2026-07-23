@@ -5,3 +5,4 @@ runs/
 videos/
 *.egg-info/
 .venv/
+.env
