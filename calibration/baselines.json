@@ -1,0 +1,112 @@
+{
+  "dead_surrogate_v1__seed0": {
+    "accepted": true,
+    "broken_baseline": 22.292961082244265,
+    "broken_runs": [
+      22.67528735632184,
+      21.64109589041096,
+      22.5625
+    ],
+    "bug_id": "dead_surrogate_v1",
+    "clean_baseline": 175.53579122831846,
+    "clean_runs": [
+      158.87234042553192,
+      174.95454545454547,
+      192.78048780487805
+    ],
+    "instance_seed": 0,
+    "margin": 153.2428301460742,
+    "std_broken": 0.46323242415258653,
+    "std_clean": 13.849043280121345,
+    "threshold": 41.547129840364036,
+    "total_timesteps": 40000
+  },
+  "dead_surrogate_v1__seed1": {
+    "accepted": true,
+    "broken_baseline": 21.75528877119764,
+    "broken_runs": [
+      21.00531914893617,
+      21.753424657534246,
+      22.507122507122507
+    ],
+    "bug_id": "dead_surrogate_v1",
+    "clean_baseline": 184.85895989974938,
+    "clean_runs": [
+      197.39473684210526,
+      152.85714285714286,
+      204.325
+    ],
+    "instance_seed": 1,
+    "margin": 163.10367112855175,
+    "std_broken": 0.6131100705173864,
+    "std_clean": 22.80488774189667,
+    "threshold": 68.41466322569002,
+    "total_timesteps": 40000
+  },
+  "dead_surrogate_v1__seed2": {
+    "accepted": true,
+    "broken_baseline": 21.934670629686135,
+    "broken_runs": [
+      21.76164383561644,
+      21.804407713498623,
+      22.237960339943342
+    ],
+    "bug_id": "dead_surrogate_v1",
+    "clean_baseline": 185.0863124793115,
+    "clean_runs": [
+      154.37735849056602,
+      203.6315789473684,
+      197.25
+    ],
+    "instance_seed": 2,
+    "margin": 163.15164184962535,
+    "std_broken": 0.21516764560656124,
+    "std_clean": 21.870238968021326,
+    "threshold": 65.61071690406398,
+    "total_timesteps": 40000
+  },
+  "dead_surrogate_v1__seed3": {
+    "accepted": true,
+    "broken_baseline": 21.913497181107903,
+    "broken_runs": [
+      21.197333333333333,
+      23.190058479532162,
+      21.353099730458222
+    ],
+    "bug_id": "dead_surrogate_v1",
+    "clean_baseline": 192.7128787878788,
+    "clean_runs": [
+      178.11363636363637,
+      196.9,
+      203.125
+    ],
+    "instance_seed": 3,
+    "margin": 170.79938160677088,
+    "std_broken": 0.9049023350963663,
+    "std_clean": 10.631433449018049,
+    "threshold": 31.89430034705415,
+    "total_timesteps": 40000
+  },
+  "dead_surrogate_v1__seed4": {
+    "accepted": true,
+    "broken_baseline": 22.12763635138155,
+    "broken_runs": [
+      22.89913544668588,
+      22.29494382022472,
+      21.18882978723404
+    ],
+    "bug_id": "dead_surrogate_v1",
+    "clean_baseline": 191.8539829027634,
+    "clean_runs": [
+      179.0952380952381,
+      185.6829268292683,
+      210.78378378378378
+    ],
+    "instance_seed": 4,
+    "margin": 169.72634655138185,
+    "std_broken": 0.7081808639212057,
+    "std_clean": 13.652897903874404,
+    "threshold": 40.95869371162321,
+    "total_timesteps": 40000
+  }
+}
