@@ -1,0 +1,25 @@
+# Canonical bug bank index. See README.md section 5 for schema and section 5.2
+# for the three v0 bug types. Each entry's patch must apply cleanly to the
+# pristine base/ppo_cartpole.py (see tests/test_patches_apply.py).
+
+- bug_id: dead_surrogate_v1
+  category: silent_gradient
+  patch: patches/dead_surrogate_v1.diff
+  symptom: "Episodic return is flat after training. No errors."
+  difficulty: hard
+  detectable_from: [metrics, plots]
+  ground_truth_lines: [251]
+  ground_truth_description: >
+    The PPO ratio is computed as newlogprob - newlogprob instead of
+    newlogprob - b_logprobs[mb_inds], i.e. the "old" log-prob term in the
+    surrogate ratio is the same tensor as the "new" one rather than the
+    log-prob recorded from the rollout buffer under the pre-update policy.
+    Since both terms share the same autograd graph, the subtraction cancels
+    exactly (value and gradient), so the ratio is identically 1.0 and the
+    clipped surrogate objective (pg_loss) contributes zero gradient to the
+    actor. Only the value and entropy terms still train. Empirically
+    confirmed: policy_loss stays pinned at float noise (~1e-8) for the full
+    run, and episodic return plateaus far below the clean baseline (see
+    calibration/baselines.json once step 3 is built).
+  instances: 5
+  instance_seeds: [0, 1, 2, 3, 4]

@@ -1,0 +1,13 @@
+diff --git a/base/ppo_cartpole.py b/base/ppo_cartpole.py
+index edde76b..88b33c5 100644
+--- a/base/ppo_cartpole.py
++++ b/base/ppo_cartpole.py
+@@ -248,7 +248,7 @@ if __name__ == "__main__":
+                 mb_inds = b_inds[start:end]
+ 
+                 _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])
+-                logratio = newlogprob - b_logprobs[mb_inds]
++                logratio = newlogprob - newlogprob
+                 ratio = logratio.exp()
+ 
+                 with torch.no_grad():
