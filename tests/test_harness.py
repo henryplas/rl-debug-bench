@@ -15,8 +15,12 @@ from harness.models import AssistantTurn, ModelAdapter, ToolCall
 from harness.tools import ToolBox, tool_schemas_for_arm
 
 DEAD_SURROGATE_PATCH = "patches/dead_surrogate_v1.diff"
-BUGGY_LINE = "logratio = newlogprob - newlogprob"
-FIXED_LINE = "logratio = newlogprob - b_logprobs[mb_inds]"
+BUGGY_MARKER = "_, old_logprob, _, _ = agent.get_action_and_value"
+BUGGY_BLOCK = (
+    "                _, old_logprob, _, _ = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])\n"
+    "                logratio = newlogprob - old_logprob"
+)
+FIXED_LINE = "                logratio = newlogprob - b_logprobs[mb_inds]"
 
 
 class ScriptedAdapter(ModelAdapter):
@@ -65,7 +69,7 @@ def container():
 def test_container_applies_patch_and_isolates_network(container):
     with open(os.path.join(container.host_workspace, "ppo_cartpole.py")) as f:
         content = f.read()
-    assert BUGGY_LINE in content
+    assert BUGGY_MARKER in content
 
     exit_code, _, stderr = container.exec(
         ["python", "-c", "import socket; socket.create_connection(('8.8.8.8', 53), timeout=3)"],
@@ -80,10 +84,11 @@ def test_toolbox_read_list_edit(container):
 
     assert box.list_files(".") == "ppo_cartpole.py"
 
-    out = box.read_file("ppo_cartpole.py", start=251, end=251)
-    assert out == f"251\t                {BUGGY_LINE}"
+    out = box.read_file("ppo_cartpole.py", start=251, end=252)
+    expected = "\n".join(f"{251 + i}\t{line}" for i, line in enumerate(BUGGY_BLOCK.split("\n")))
+    assert out == expected
 
-    result = box.edit_file("ppo_cartpole.py", BUGGY_LINE, FIXED_LINE)
+    result = box.edit_file("ppo_cartpole.py", BUGGY_BLOCK, FIXED_LINE)
     assert result == "ok: edit applied"
     with open(os.path.join(container.host_workspace, "ppo_cartpole.py")) as f:
         assert FIXED_LINE in f.read()
@@ -143,7 +148,7 @@ def test_run_episode_end_to_end_fixes_the_bug(tmp_path):
     plan = [
         ("list_files", {"path": "."}),
         ("read_file", {"path": "ppo_cartpole.py", "start": 248, "end": 253}),
-        ("edit_file", {"path": "ppo_cartpole.py", "old_str": BUGGY_LINE, "new_str": FIXED_LINE}),
+        ("edit_file", {"path": "ppo_cartpole.py", "old_str": BUGGY_BLOCK, "new_str": FIXED_LINE}),
         ("run_training", {"iterations": 1}),
         ("submit", {}),
     ]

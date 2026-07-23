@@ -94,7 +94,9 @@ def run_episode(
 
     with EpisodeContainer(patch_relpath=entry["patch"]) as container:
         toolbox = ToolBox(container, arm=arm, episode_seed=episode_seed)
-        messages = []
+        # Providers' message APIs require a non-empty history to start; the
+        # actual task is already in system_prompt, so this is just a kickoff.
+        messages = [{"role": "user", "content": "Begin."}]
         turn = 0
 
         while True:

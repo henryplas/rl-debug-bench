@@ -17,8 +17,11 @@ from scoring.localization import broken_source_for, changed_lines, pristine_sour
 from scoring.outcome import score_outcome
 from scoring.score_episode import score_episode
 
-BUGGY_LINE = "logratio = newlogprob - newlogprob"
-FIXED_LINE = "logratio = newlogprob - b_logprobs[mb_inds]"
+BUGGY_BLOCK = (
+    "                _, old_logprob, _, _ = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])\n"
+    "                logratio = newlogprob - old_logprob"
+)
+FIXED_LINE = "                logratio = newlogprob - b_logprobs[mb_inds]"
 INSTANCE_ID = "dead_surrogate_v1__seed0"
 PATCH = "patches/dead_surrogate_v1.diff"
 
@@ -44,7 +47,7 @@ class ScriptedAdapter(ModelAdapter):
 
 def test_localization_perfect_fix_scores_one():
     broken = broken_source_for(PATCH)
-    perfect_fix = broken.replace(BUGGY_LINE, FIXED_LINE)
+    perfect_fix = broken.replace(BUGGY_BLOCK, FIXED_LINE)
     result = score_localization(perfect_fix, broken, ground_truth_lines=[251])
     assert result == {"localization": 1.0, "localization_binary": True, "changed_lines": [251]}
 
@@ -66,7 +69,7 @@ def test_localization_unrelated_edit_scores_zero():
 
 def test_localization_partial_overlap():
     broken = broken_source_for(PATCH)
-    mixed = broken.replace(BUGGY_LINE, FIXED_LINE).replace("ent_coef: float = 0.01", "ent_coef: float = 0.02")
+    mixed = broken.replace(BUGGY_BLOCK, FIXED_LINE).replace("ent_coef: float = 0.01", "ent_coef: float = 0.02")
     result = score_localization(mixed, broken, ground_truth_lines=[251])
     assert result["localization"] == 0.5  # 1 correct line / 2 changed union truth
     assert result["localization_binary"] is True
@@ -102,7 +105,7 @@ def test_outcome_broken_scores_near_zero(tmp_path):
 def test_score_episode_end_to_end(tmp_path):
     plan = [
         ("read_file", {"path": "ppo_cartpole.py", "start": 248, "end": 253}),
-        ("edit_file", {"path": "ppo_cartpole.py", "old_str": BUGGY_LINE, "new_str": FIXED_LINE}),
+        ("edit_file", {"path": "ppo_cartpole.py", "old_str": BUGGY_BLOCK, "new_str": FIXED_LINE}),
         ("submit", {}),
     ]
     episode_result = run_episode(
