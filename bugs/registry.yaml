@@ -1,12 +1,15 @@
-# Canonical bug bank index. See tasks/tasks-list.md section 5 for schema and
-# tasks/hardness-v1.md for the base_id / tier / bug_class fields (backfill
-# pending). Each entry's patch must apply cleanly to its base_id's pristine
-# base file (see tests/test_patches_apply.py). Entries below currently target
-# base/legacy_cleanrl/ppo_cartpole.py only.
+# Canonical bug bank index. See tasks/tasks-list.md section 5 for the base
+# schema and tasks/hardness-v1.md section 4 for base_id / tier / bug_class /
+# file / diagnostic_metrics / accepted_failure_phrasings (backfilled onto all
+# entries per that section's migration rule: every entry gets these fields
+# before any new bug is added). Each entry's patch must apply cleanly to its
+# base_id's pristine files (see tests/test_patches_apply.py).
 
 - bug_id: dead_surrogate_v1
   base_id: legacy_cleanrl
   file: ppo_cartpole.py
+  tier: easy
+  bug_class: wrong_line
   category: silent_gradient
   patch: patches/dead_surrogate_v1.diff
   symptom: "Episodic return is flat after training. No errors."
@@ -26,12 +29,25 @@
     still train. Empirically confirmed: policy_loss stays pinned at float
     noise (~1e-8) for the full run, and episodic return plateaus far below
     the clean baseline (calibration/baselines.json).
+  diagnostic_metrics: [policy_loss, approx_kl]
+  accepted_failure_phrasings:
+    - "ratio uses the current policy for both the old and new log-probs"
+    - "old log-prob is recomputed instead of using the stored rollout value"
+    - "PPO ratio is always 1.0 so the policy gradient is zero"
+    - "surrogate objective contributes no gradient to the actor"
   instances: 5
   instance_seeds: [0, 1, 2, 3, 4]
+  empirical_notes: >
+    Two live smoke evals against claude-sonnet-4-5 (tasks/hardness-v1.md),
+    including a rewrite specifically to remove the self-subtraction code
+    smell, both solved 3/3 -- consistent with tier: easy (memorized
+    reference), within the 80-100% target band.
 
 - bug_id: logprob_broadcast_v1
   base_id: legacy_cleanrl
   file: ppo_cartpole.py
+  tier: easy
+  bug_class: wrong_line
   category: silent_shape_bug
   patch: patches/logprob_broadcast_v1.diff
   symptom: "Training is unstable and performance is much worse than expected. No errors."
@@ -65,12 +81,23 @@
     episodic return of ~26 (clean ~159) with high variance (occasional
     episodes over 100), degraded but clearly not dead (see
     calibration/baselines.json).
+  diagnostic_metrics: [policy_loss, approx_kl, clipfrac]
+  accepted_failure_phrasings:
+    - "log-probs are broadcast against the wrong samples"
+    - "shape mismatch makes the ratio compare different samples' log-probs"
+    - "an extra dimension on the stored log-probs broadcasts incorrectly"
   instances: 5
   instance_seeds: [0, 1, 2, 3, 4]
+  empirical_notes: >
+    Not yet smoke-evaled against a live model. tier: easy is a structural
+    classification (legacy_cleanrl + wrong_line), not an empirical
+    confirmation; retune/reclassify once measured.
 
 - bug_id: dead_surrogate_v1_modular
   base_id: modular_v1
   file: update.py
+  tier: medium
+  bug_class: wrong_line
   category: silent_gradient
   patch: patches/dead_surrogate_v1_modular.diff
   symptom: "Episodic return is flat after training. No errors."
@@ -93,5 +120,22 @@
     legacy-vs-modular checkpoint smoke eval (hardness-v1.md section 5 step 3),
     not the full 5-instance bank; expand instance_seeds if this base is
     pursued further.
+  diagnostic_metrics: [policy_loss, approx_kl]
+  accepted_failure_phrasings:
+    - "ratio uses the current policy for both the old and new log-probs"
+    - "old log-prob is recomputed instead of using the stored rollout value"
+    - "PPO ratio is always 1.0 so the policy gradient is zero"
+    - "surrogate objective contributes no gradient to the actor"
+  empirical_notes: >
+    Checkpoint smoke eval (hardness-v1.md section 5 step 3) against
+    claude-sonnet-4-5, 3 seeds: outcome 1.0/1.0/1.0, mean 1.000, identical to
+    legacy_cleanrl's 1.000 (delta 0.000) despite needing far more exploration
+    (8 read_file calls vs. 1-2 on legacy per the transcripts). tier: medium
+    is the structural classification (unmemorized base + wrong_line) per
+    section 2's table, but this is empirically outside its 40-70% target
+    band -- flagged for retuning/reclassification per section 2's own
+    guidance ("retuned or reclassified, not deleted"), not silently
+    mislabeled. The finding itself (de-memorization alone doesn't move a
+    wrong_line bug) is what motivates Lever 3.
   instances: 1
   instance_seeds: [0]
