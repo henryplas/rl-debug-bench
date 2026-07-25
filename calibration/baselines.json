@@ -108,5 +108,138 @@
     "std_clean": 13.652897903874404,
     "threshold": 40.95869371162321,
     "total_timesteps": 40000
+  },
+  "dead_surrogate_v1_modular__seed0": {
+    "accepted": true,
+    "base_id": "modular_v1",
+    "broken_baseline": 22.073447527257276,
+    "broken_runs": [
+      21.638356164383563,
+      21.914364640883978,
+      22.667621776504298
+    ],
+    "bug_id": "dead_surrogate_v1_modular",
+    "clean_baseline": 176.81978062542848,
+    "clean_runs": [
+      164.6326530612245,
+      181.27906976744185,
+      184.54761904761904
+    ],
+    "instance_seed": 0,
+    "margin": 154.7463330981712,
+    "std_broken": 0.4349922977296751,
+    "std_clean": 8.720298630164447,
+    "threshold": 26.16089589049334,
+    "total_timesteps": 40000
+  },
+  "logprob_broadcast_v1__seed0": {
+    "accepted": true,
+    "broken_baseline": 26.786792700025284,
+    "broken_runs": [
+      26.21,
+      25.376996805111823,
+      28.77338129496403
+    ],
+    "bug_id": "logprob_broadcast_v1",
+    "clean_baseline": 175.53579122831846,
+    "clean_runs": [
+      158.87234042553192,
+      174.95454545454547,
+      192.78048780487805
+    ],
+    "instance_seed": 0,
+    "margin": 148.74899852829319,
+    "std_broken": 1.445308332693293,
+    "std_clean": 13.849043280121345,
+    "threshold": 41.547129840364036,
+    "total_timesteps": 40000
+  },
+  "logprob_broadcast_v1__seed1": {
+    "accepted": true,
+    "broken_baseline": 27.94951719431906,
+    "broken_runs": [
+      27.45263157894737,
+      28.480427046263344,
+      27.91549295774648
+    ],
+    "bug_id": "logprob_broadcast_v1",
+    "clean_baseline": 184.85895989974938,
+    "clean_runs": [
+      197.39473684210526,
+      152.85714285714286,
+      204.325
+    ],
+    "instance_seed": 1,
+    "margin": 156.9094427054303,
+    "std_broken": 0.4202849169825763,
+    "std_clean": 22.80488774189667,
+    "threshold": 68.41466322569002,
+    "total_timesteps": 40000
+  },
+  "logprob_broadcast_v1__seed2": {
+    "accepted": true,
+    "broken_baseline": 26.910634860120183,
+    "broken_runs": [
+      26.049180327868854,
+      26.46843853820598,
+      28.214285714285715
+    ],
+    "bug_id": "logprob_broadcast_v1",
+    "clean_baseline": 185.0863124793115,
+    "clean_runs": [
+      154.37735849056602,
+      203.6315789473684,
+      197.25
+    ],
+    "instance_seed": 2,
+    "margin": 158.1756776191913,
+    "std_broken": 0.9375761387424006,
+    "std_clean": 21.870238968021326,
+    "threshold": 65.61071690406398,
+    "total_timesteps": 40000
+  },
+  "logprob_broadcast_v1__seed3": {
+    "accepted": true,
+    "broken_baseline": 27.321404457182734,
+    "broken_runs": [
+      26.17105263157895,
+      27.96099290780142,
+      27.832167832167833
+    ],
+    "bug_id": "logprob_broadcast_v1",
+    "clean_baseline": 192.7128787878788,
+    "clean_runs": [
+      178.11363636363637,
+      196.9,
+      203.125
+    ],
+    "instance_seed": 3,
+    "margin": 165.39147433069607,
+    "std_broken": 0.8151200185782339,
+    "std_clean": 10.631433449018049,
+    "threshold": 31.89430034705415,
+    "total_timesteps": 40000
+  },
+  "logprob_broadcast_v1__seed4": {
+    "accepted": true,
+    "broken_baseline": 27.102840035043425,
+    "broken_runs": [
+      29.04029304029304,
+      25.193650793650793,
+      27.07457627118644
+    ],
+    "bug_id": "logprob_broadcast_v1",
+    "clean_baseline": 191.8539829027634,
+    "clean_runs": [
+      179.0952380952381,
+      185.6829268292683,
+      210.78378378378378
+    ],
+    "instance_seed": 4,
+    "margin": 164.75114286771998,
+    "std_broken": 1.5705122887503409,
+    "std_clean": 13.652897903874404,
+    "threshold": 40.95869371162321,
+    "total_timesteps": 40000
   }
 }

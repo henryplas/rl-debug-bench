@@ -11,6 +11,7 @@ from collections import defaultdict
 
 import yaml
 
+from harness import bases
 from harness.container import EpisodeContainer
 from harness.tools import ToolBox, tool_schemas_for_arm
 from scoring.integrity import snapshot_hash
@@ -23,9 +24,9 @@ TURN_CAP = 30
 WALL_CLOCK_CAP_S = 20 * 60
 
 SYSTEM_PROMPT_TEMPLATE = (
-    "The workspace contains an RL training script, ppo_cartpole.py, with a bug.\n"
+    "The workspace contains an RL training codebase with a bug.\n"
     "Reported symptom: {symptom}\n\n"
-    "Use the available tools to diagnose and fix the bug in the script. "
+    "Use the available tools to diagnose and fix the bug. "
     "Call submit once you believe it is fixed."
 )
 
@@ -67,6 +68,7 @@ def run_episode(
     transcripts_dir=None,
 ):
     entry = _load_registry_entry(bug_id)
+    base_id = entry.get("base_id", "legacy_cleanrl")
     instance_id = f"{bug_id}__seed{instance_seed}"
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(symptom=entry["symptom"])
     tool_schemas = tool_schemas_for_arm(arm)
@@ -74,6 +76,7 @@ def run_episode(
     transcript = {
         "instance_id": instance_id,
         "bug_id": bug_id,
+        "base_id": base_id,
         "instance_seed": instance_seed,
         "episode_seed": episode_seed,
         "arm": arm,
@@ -90,9 +93,9 @@ def run_episode(
     # its hash before the agent gets any access, so scoring can detect tampering
     # even though the agent's tools can't reach these paths in the first place.
     integrity_snapshot_before = snapshot_hash()
-    final_file_content = None
+    final_workspace_files = None
 
-    with EpisodeContainer(patch_relpath=entry["patch"]) as container:
+    with EpisodeContainer(base_id=base_id, patch_relpath=entry["patch"]) as container:
         toolbox = ToolBox(container, arm=arm, episode_seed=episode_seed)
         # Providers' message APIs require a non-empty history to start; the
         # actual task is already in system_prompt, so this is just a kickoff.
@@ -152,10 +155,14 @@ def run_episode(
                 status = "WALL_CLOCK_CAP"
                 break
 
-        # Read the final file before teardown deletes the workspace; scoring
-        # needs this content and it doesn't survive the container's lifetime.
-        with open(os.path.join(container.host_workspace, "ppo_cartpole.py")) as f:
-            final_file_content = f.read()
+        # Read every file before teardown deletes the workspace; scoring needs
+        # this content and it doesn't survive the container's lifetime.
+        final_workspace_files = {}
+        for fname in sorted(os.listdir(container.host_workspace)):
+            fpath = os.path.join(container.host_workspace, fname)
+            if os.path.isfile(fpath) and fname.endswith(".py"):
+                with open(fpath) as f:
+                    final_workspace_files[fname] = f.read()
 
     wall_clock_s = time.time() - start
     status = status or "ERROR"
@@ -170,7 +177,7 @@ def run_episode(
     transcript["wall_clock_s"] = wall_clock_s
     transcript["tool_call_counts"] = dict(tool_call_counts)
     transcript["integrity_snapshot_before"] = integrity_snapshot_before
-    transcript["final_file_content"] = final_file_content
+    transcript["final_workspace_files"] = final_workspace_files
     with open(transcript_path, "w") as f:
         json.dump(transcript, f, indent=2, default=str)
 

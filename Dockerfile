@@ -7,8 +7,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /rl-debug-bench
 
-COPY base/requirements.txt base/requirements.txt
-RUN pip install --no-cache-dir -r base/requirements.txt
+COPY base/legacy_cleanrl/requirements.txt base/legacy_cleanrl/requirements.txt
+RUN pip install --no-cache-dir -r base/legacy_cleanrl/requirements.txt
 
 COPY pyproject.toml ./
 COPY base/ base/
@@ -16,4 +16,4 @@ COPY tests/ tests/
 
 RUN pip install --no-cache-dir pytest
 
-CMD ["python", "base/ppo_cartpole.py"]
+CMD ["python", "base/legacy_cleanrl/ppo_cartpole.py"]

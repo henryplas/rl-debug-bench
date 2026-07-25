@@ -14,6 +14,7 @@ import glob
 import json
 import os
 
+from harness import bases
 from harness.container import EpisodeContainer
 from harness.metrics import final_window_scalar_mean
 from harness.tools import NUM_ENVS, NUM_STEPS
@@ -37,7 +38,7 @@ def _load_baseline(instance_id):
 
 def _run_once(container, seed, total_timesteps, exp_name):
     argv = [
-        "python", "ppo_cartpole.py",
+        "python", bases.base_entrypoint(container.base_id),
         "--seed", str(seed),
         "--no-cuda", "--no-track", "--no-capture-video",
         "--total-timesteps", str(total_timesteps),
@@ -56,14 +57,14 @@ def _run_once(container, seed, total_timesteps, exp_name):
     return final_window_scalar_mean(event_files[0], "charts/episodic_return", total_timesteps)
 
 
-def score_outcome(source_path, instance_id, num_seeds=NUM_SCORING_SEEDS):
+def score_outcome(base_id, source_dir, instance_id, num_seeds=NUM_SCORING_SEEDS):
     baseline = _load_baseline(instance_id)
     total_timesteps = baseline["total_timesteps"]
     clean_baseline = baseline["clean_baseline"]
     broken_baseline = baseline["broken_baseline"]
 
     runs = []
-    with EpisodeContainer(source_path=source_path) as container:
+    with EpisodeContainer(base_id=base_id, source_dir=source_dir) as container:
         for k in range(num_seeds):
             seed = SEED_OFFSET + k
             runs.append(_run_once(container, seed, total_timesteps, exp_name=f"score{k}"))

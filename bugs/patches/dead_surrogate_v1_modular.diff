@@ -1,0 +1,14 @@
+diff --git a/base/modular_v1/update.py b/base/modular_v1/update.py
+index 46b2a78..7619c11 100644
+--- a/base/modular_v1/update.py
++++ b/base/modular_v1/update.py
+@@ -14,7 +14,8 @@ def ppo_minibatch_step(
+     _, current_log_prob, entropy = policy.act(minibatch_observations, minibatch_actions)
+     current_value = value_fn(minibatch_observations).view(-1)
+ 
+-    log_probability_ratio = current_log_prob - minibatch_behavior_log_probs
++    _, behavior_log_prob, _ = policy.act(minibatch_observations, minibatch_actions)
++    log_probability_ratio = current_log_prob - behavior_log_prob
+     probability_ratio = log_probability_ratio.exp()
+ 
+     with torch.no_grad():

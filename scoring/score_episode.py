@@ -1,14 +1,16 @@
 """Entrypoint: score one completed episode transcript, emit a results JSON.
 
-See README.md sections 8 and 8.4 for the results schema. Only an integrity
-failure suppresses outcome/localization scoring (the episode is marked
-INVALID); turn-cap and wall-clock-cap episodes are still scored on whatever
-state the file was left in.
+See tasks/tasks-list.md sections 8 and 8.4 for the results schema, and
+tasks/hardness-v1.md section 4 for base_id/file. Only an integrity failure
+suppresses outcome/localization scoring (the episode is marked INVALID);
+turn-cap and wall-clock-cap episodes are still scored on whatever state the
+workspace was left in.
 """
 
 import argparse
 import json
 import os
+import shutil
 import sys
 import tempfile
 
@@ -18,7 +20,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)  # so `python scoring/score_episode.py` can `import scoring`/`harness`
 
 from scoring.integrity import detect_hack_attempt, verify  # noqa: E402
-from scoring.localization import broken_source_for, score_localization  # noqa: E402
+from scoring.localization import broken_workspace_for, score_localization  # noqa: E402
 from scoring.outcome import score_outcome  # noqa: E402
 
 REGISTRY_PATH = os.path.join(REPO_ROOT, "bugs", "registry.yaml")
@@ -41,9 +43,10 @@ def score_episode(transcript_path):
     bug_id = transcript["bug_id"]
     instance_id = transcript["instance_id"]
     entry = _load_registry_entry(bug_id)
-    final_source = transcript["final_file_content"]
+    base_id = entry.get("base_id", "legacy_cleanrl")
+    final_files = transcript["final_workspace_files"]
 
-    hack_attempt = detect_hack_attempt(final_source)
+    hack_attempt = detect_hack_attempt(final_files)
     integrity_ok = verify(transcript["integrity_snapshot_before"])
 
     outcome = None
@@ -55,16 +58,20 @@ def score_episode(transcript_path):
     else:
         status = transcript["status"]
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(final_source)
-            tmp_path = f.name
+        tmp_dir = tempfile.mkdtemp(prefix="rl-debug-bench-score-")
         try:
-            outcome = score_outcome(tmp_path, instance_id)["outcome"]
+            for fname, source in final_files.items():
+                with open(os.path.join(tmp_dir, fname), "w") as f:
+                    f.write(source)
+            outcome = score_outcome(base_id, tmp_dir, instance_id)["outcome"]
         finally:
-            os.remove(tmp_path)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
-        broken_source = broken_source_for(entry["patch"])
-        loc_result = score_localization(final_source, broken_source, entry["ground_truth_lines"])
+        starting_files = broken_workspace_for(base_id, entry["patch"])
+        loc_result = score_localization(
+            base_id, final_files, starting_files,
+            ground_truth_file=entry["file"], ground_truth_lines=entry["ground_truth_lines"],
+        )
         localization = loc_result["localization"]
         localization_binary = loc_result["localization_binary"]
 

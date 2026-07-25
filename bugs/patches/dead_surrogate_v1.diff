@@ -1,7 +1,7 @@
-diff --git a/base/ppo_cartpole.py b/base/ppo_cartpole.py
+diff --git a/base/legacy_cleanrl/ppo_cartpole.py b/base/legacy_cleanrl/ppo_cartpole.py
 index edde76b..bc38de7 100644
---- a/base/ppo_cartpole.py
-+++ b/base/ppo_cartpole.py
+--- a/base/legacy_cleanrl/ppo_cartpole.py
++++ b/base/legacy_cleanrl/ppo_cartpole.py
 @@ -248,7 +248,8 @@ if __name__ == "__main__":
                  mb_inds = b_inds[start:end]
  

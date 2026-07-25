@@ -1,0 +1,13 @@
+diff --git a/base/legacy_cleanrl/ppo_cartpole.py b/base/legacy_cleanrl/ppo_cartpole.py
+index edde76b..e663a56 100644
+--- a/base/legacy_cleanrl/ppo_cartpole.py
++++ b/base/legacy_cleanrl/ppo_cartpole.py
+@@ -185,7 +185,7 @@ if __name__ == "__main__":
+     for iteration in range(1, args.num_iterations + 1):
+         # Annealing the rate if instructed to do so.
+         if args.anneal_lr:
+-            frac = 1.0 - (iteration - 1.0) / args.num_iterations
++            frac = (iteration - 1.0) / args.num_iterations
+             lrnow = frac * args.learning_rate
+             optimizer.param_groups[0]["lr"] = lrnow
+ 

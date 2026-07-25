@@ -10,6 +10,7 @@ store keyed by run_id, so they go through the container / MetricsStore.
 import os
 import time
 
+from harness import bases
 from harness.metrics import MetricsStore
 
 NUM_ENVS = 4
@@ -199,7 +200,7 @@ class ToolBox:
             timeout_s = max(1, min(timeout_s, int(max_wall_s)))
 
         argv = [
-            "python", "ppo_cartpole.py",
+            "python", bases.base_entrypoint(self.container.base_id),
             "--seed", str(seed),
             "--no-cuda", "--no-track", "--no-capture-video",
             "--total-timesteps", str(total_timesteps),

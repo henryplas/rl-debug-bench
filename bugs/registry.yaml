@@ -1,8 +1,12 @@
-# Canonical bug bank index. See README.md section 5 for schema and section 5.2
-# for the three v0 bug types. Each entry's patch must apply cleanly to the
-# pristine base/ppo_cartpole.py (see tests/test_patches_apply.py).
+# Canonical bug bank index. See tasks/tasks-list.md section 5 for schema and
+# tasks/hardness-v1.md for the base_id / tier / bug_class fields (backfill
+# pending). Each entry's patch must apply cleanly to its base_id's pristine
+# base file (see tests/test_patches_apply.py). Entries below currently target
+# base/legacy_cleanrl/ppo_cartpole.py only.
 
 - bug_id: dead_surrogate_v1
+  base_id: legacy_cleanrl
+  file: ppo_cartpole.py
   category: silent_gradient
   patch: patches/dead_surrogate_v1.diff
   symptom: "Episodic return is flat after training. No errors."
@@ -10,16 +14,84 @@
   detectable_from: [metrics, plots]
   ground_truth_lines: [251]
   ground_truth_description: >
-    The PPO ratio is computed as newlogprob - newlogprob instead of
-    newlogprob - b_logprobs[mb_inds], i.e. the "old" log-prob term in the
-    surrogate ratio is the same tensor as the "new" one rather than the
-    log-prob recorded from the rollout buffer under the pre-update policy.
-    Since both terms share the same autograd graph, the subtraction cancels
-    exactly (value and gradient), so the ratio is identically 1.0 and the
-    clipped surrogate objective (pg_loss) contributes zero gradient to the
-    actor. Only the value and entropy terms still train. Empirically
-    confirmed: policy_loss stays pinned at float noise (~1e-8) for the full
-    run, and episodic return plateaus far below the clean baseline (see
-    calibration/baselines.json once step 3 is built).
+    The "old" log-prob term in the PPO ratio is a fresh, redundant recompute
+    of get_action_and_value at the current policy (old_logprob) instead of
+    the log-prob recorded from the rollout buffer under the pre-update
+    policy (b_logprobs[mb_inds]). Since both newlogprob and old_logprob are
+    the same differentiable function evaluated at the same weights, the
+    subtraction cancels exactly (value and gradient, not just numerically at
+    one instant -- verified with a standalone autograd check), so the ratio
+    is identically 1.0 and the clipped surrogate objective (pg_loss)
+    contributes zero gradient to the actor. Only the value and entropy terms
+    still train. Empirically confirmed: policy_loss stays pinned at float
+    noise (~1e-8) for the full run, and episodic return plateaus far below
+    the clean baseline (calibration/baselines.json).
   instances: 5
   instance_seeds: [0, 1, 2, 3, 4]
+
+- bug_id: logprob_broadcast_v1
+  base_id: legacy_cleanrl
+  file: ppo_cartpole.py
+  category: silent_shape_bug
+  patch: patches/logprob_broadcast_v1.diff
+  symptom: "Training is unstable and performance is much worse than expected. No errors."
+  difficulty: medium
+  detectable_from: [metrics, plots]
+  ground_truth_lines: [235]
+  ground_truth_description: >
+    b_logprobs is built with logprobs.reshape(-1, 1), giving shape
+    [batch_size, 1], instead of logprobs.reshape(-1), shape [batch_size].
+    logratio = newlogprob ([minibatch_size]) - b_logprobs[mb_inds]
+    ([minibatch_size, 1]) broadcasts to [minibatch_size, minibatch_size]
+    instead of raising a shape error, so ratio[i, j] compares sample j's new
+    log-prob against sample i's rollout log-prob rather than its own. No
+    exception is raised anywhere.
+
+    This is a second attempt at a shape-broadcast bug: the first version
+    broadcast b_advantages instead. With the default norm_adv=True, that
+    version turned out to be mathematically equivalent to a fully-dead actor
+    (verified with a standalone autograd check: when ratio is uniformly 1.0,
+    as it is for the first minibatch of every rollout since current weights
+    equal rollout weights, the broadcasted policy loss collapses to a
+    constant -- the mean of the zero-centered advantages -- with no
+    remaining dependence on the actor, giving an exactly-zero gradient that
+    perpetuates itself forever). Empirically, that version produced
+    training bit-for-bit identical to dead_surrogate_v1's broken run, which
+    is a duplicate instance, not a new one. Broadcasting b_logprobs instead
+    doesn't hit this trap (off-diagonal terms compare different samples'
+    log-probs, so the loss can't collapse to a ratio-independent constant);
+    a standalone gradient check confirmed a substantial, non-collapsing
+    gradient, and empirically a 40k-timestep run plateaus around a mean
+    episodic return of ~26 (clean ~159) with high variance (occasional
+    episodes over 100), degraded but clearly not dead (see
+    calibration/baselines.json).
+  instances: 5
+  instance_seeds: [0, 1, 2, 3, 4]
+
+- bug_id: dead_surrogate_v1_modular
+  base_id: modular_v1
+  file: update.py
+  category: silent_gradient
+  patch: patches/dead_surrogate_v1_modular.diff
+  symptom: "Episodic return is flat after training. No errors."
+  difficulty: hard
+  detectable_from: [metrics, plots]
+  ground_truth_lines: [17]
+  ground_truth_description: >
+    dead_surrogate_v1 ported unchanged (tasks/hardness-v1.md step 2/lever 1
+    checkpoint) to base/modular_v1: log_probability_ratio is computed from a
+    second, redundant policy.act(...) call (behavior_log_prob) instead of the
+    minibatch_behavior_log_probs passed in from the rollout buffer. Same
+    mechanism as the legacy_cleanrl instance: both current_log_prob and
+    behavior_log_prob are the same differentiable function evaluated at the
+    same weights, so the subtraction cancels exactly in value and gradient.
+    Verified with a standalone autograd check using the real PolicyNetwork
+    class: gradient is exactly 0.0, versus ~1.1 for a real (non-redundant)
+    stored behavior log-prob under the same inputs.
+
+    Only one instance registered for now -- this exists to support the
+    legacy-vs-modular checkpoint smoke eval (hardness-v1.md section 5 step 3),
+    not the full 5-instance bank; expand instance_seeds if this base is
+    pursued further.
+  instances: 1
+  instance_seeds: [0]

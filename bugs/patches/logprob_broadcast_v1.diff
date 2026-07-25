@@ -1,0 +1,13 @@
+diff --git a/base/legacy_cleanrl/ppo_cartpole.py b/base/legacy_cleanrl/ppo_cartpole.py
+index edde76b..d4cab49 100644
+--- a/base/legacy_cleanrl/ppo_cartpole.py
++++ b/base/legacy_cleanrl/ppo_cartpole.py
+@@ -232,7 +232,7 @@ if __name__ == "__main__":
+ 
+         # flatten the batch
+         b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+-        b_logprobs = logprobs.reshape(-1)
++        b_logprobs = logprobs.reshape(-1, 1)
+         b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
+         b_advantages = advantages.reshape(-1)
+         b_returns = returns.reshape(-1)

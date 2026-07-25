@@ -1,9 +1,10 @@
-"""Base repo must train cleanly and produce identical results for a fixed seed.
+"""Modular base (Lever 1, tasks/hardness-v1.md) must train cleanly and
+deterministically, same as the legacy base (tests/test_determinism.py).
 
-This backs README.md section 3, rule 2 (determinism is mandatory) and the
-build-order step 1 acceptance check. It runs the pristine, unmodified
-base/legacy_cleanrl/ppo_cartpole.py end to end at a tiny iteration budget so
-it stays fast.
+train.py imports its sibling modules (config, policy, value, rollout,
+advantage, update) as top-level modules resolved via the script's own
+directory on sys.path, so it can run with any cwd -- isolating cwd per run
+here only isolates each run's tensorboard output.
 """
 
 import glob
@@ -11,10 +12,9 @@ import os
 import subprocess
 import sys
 
-import pytest
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_SCRIPT = os.path.join(REPO_ROOT, "base", "legacy_cleanrl", "ppo_cartpole.py")
+TRAIN_SCRIPT = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "base", "modular_v1", "train.py"
+)
 
 RUN_ARGS = [
     "--seed", "0",
@@ -41,7 +41,7 @@ SCALAR_TAGS = [
 def _run(cwd):
     env = dict(os.environ, CUBLAS_WORKSPACE_CONFIG=":4096:8")
     result = subprocess.run(
-        [sys.executable, BASE_SCRIPT, *RUN_ARGS],
+        [sys.executable, TRAIN_SCRIPT, *RUN_ARGS],
         cwd=cwd,
         env=env,
         capture_output=True,
@@ -62,11 +62,11 @@ def _read_scalars(cwd, tag):
     return [(e.step, e.value) for e in ea.Scalars(tag)]
 
 
-def test_base_trains_without_error(tmp_path):
+def test_modular_base_trains_without_error(tmp_path):
     _run(cwd=tmp_path)
 
 
-def test_base_is_deterministic_for_fixed_seed(tmp_path):
+def test_modular_base_is_deterministic_for_fixed_seed(tmp_path):
     run_a = tmp_path / "a"
     run_b = tmp_path / "b"
     run_a.mkdir()
