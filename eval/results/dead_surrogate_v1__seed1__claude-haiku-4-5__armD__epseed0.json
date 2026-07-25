@@ -1,0 +1,32 @@
+{
+  "instance_id": "dead_surrogate_v1__seed1",
+  "model": "claude-haiku-4-5",
+  "arm": "D",
+  "episode_seed": 0,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": true,
+  "diagnosis": {
+    "component": "policy_update",
+    "failure_mode": "The policy network parameters are not being updated during training. Despite calculating a policy loss, the actual policy remains frozen (evidenced by zero approximate KL divergence throughout training). The policy loss values being near-zero suggests either the gradients are not being backpropagated to the policy network, or the policy parameter updates are not being applied. This results in a constant policy that cannot improve, leading to flat episodic returns that remain stochastic but non-improving.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "charts/episodic_return",
+      "losses/entropy"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 4,
+  "wall_clock_s": 50.55902600288391,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 1,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

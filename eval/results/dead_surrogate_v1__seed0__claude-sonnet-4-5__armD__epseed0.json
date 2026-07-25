@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed0",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 0,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "All advantages are being set to zero, preventing any policy updates. The policy loss remains at zero throughout training (showing only floating point noise around 1e-8), approx_kl is exactly 0.0, clipfrac is 0.0, and policy entropy remains constant at ln(2) (uniform random policy). Despite episodes completing with varying returns (8-111) and the value function learning (explained variance increasing from ~0.004 to ~0.35), the policy never updates because the advantages used for policy gradient are all zero. This could be caused by incorrect normalization (dividing by zero standard deviation), incorrect advantage calculation that always outputs zero, or advantages being explicitly zeroed out in the computation.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 89.40471935272217,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

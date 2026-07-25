@@ -1,0 +1,34 @@
+{
+  "instance_id": "dead_surrogate_v1__seed4",
+  "model": "claude-haiku-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": true,
+  "diagnosis": {
+    "component": "policy_update",
+    "failure_mode": "The policy network parameters are not being updated during training. The approximated KL divergence between old and new policies remains exactly 0.0 throughout the entire training run, indicating the policy distribution is not changing. The policy loss is computed but the policy weights remain frozen. This is evident from: (1) approx_kl always being 0.0, (2) policy_loss being essentially zero (1e-7 magnitude), (3) entropy remaining constant, (4) clipfrac always being 0.0, and (5) episodic returns showing no improvement trend. Meanwhile, the value function is learning (explained_variance improves from 0.005 to 0.42), confirming that other components work but policy optimization is broken.",
+    "evidence_metrics": [
+      "losses/approx_kl",
+      "losses/policy_loss",
+      "losses/old_approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "charts/episodic_return",
+      "losses/explained_variance"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 59.398823261260986,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

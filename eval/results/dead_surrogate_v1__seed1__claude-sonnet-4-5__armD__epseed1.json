@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed1",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 1,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "optimizer",
+    "failure_mode": "The optimizer is not updating the policy network parameters. The policy remains frozen at its random initialization (uniform distribution with entropy=ln(2)=0.693), while the value function learns normally. Evidence: policy_loss\u22480 throughout training, approx_kl=0 (no policy change), clipfrac=0 (no ratio clipping), and constant entropy at ln(2). Meanwhile, value_loss decreases and explained_variance increases, proving the value function is learning. This suggests the optimizer is misconfigured to only update value function parameters, or there's a bug in how the policy and value networks share parameters with the optimizer.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/value_loss",
+      "losses/explained_variance"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 69.97198510169983,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

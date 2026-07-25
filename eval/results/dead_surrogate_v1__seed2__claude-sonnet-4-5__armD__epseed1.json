@@ -1,0 +1,34 @@
+{
+  "instance_id": "dead_surrogate_v1__seed2",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 1,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": true,
+  "diagnosis": {
+    "component": "policy_update",
+    "failure_mode": "The policy network is not being updated during training. The policy maintains a uniform random distribution (constant maximum entropy of ln(2) = 0.693) throughout all 100 iterations. Policy loss remains at numerical zero (~10^-7), approx_kl is exactly 0.0, and clipfrac is 0.0, indicating no policy gradient updates are being applied. Meanwhile, the value function trains normally as evidenced by decreasing value loss (55 \u2192 13) and increasing explained variance (0 \u2192 0.47). This suggests the policy optimizer is either disconnected, has zero learning rate, or the policy loss gradients are not being backpropagated, while the value function optimizer works correctly.",
+    "evidence_metrics": [
+      "losses/entropy",
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/value_loss",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 4,
+  "wall_clock_s": 60.61602592468262,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 1,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

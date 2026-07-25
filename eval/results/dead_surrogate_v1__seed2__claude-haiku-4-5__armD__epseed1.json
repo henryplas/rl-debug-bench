@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed2",
+  "model": "claude-haiku-4-5",
+  "arm": "D",
+  "episode_seed": 1,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": true,
+  "diagnosis": {
+    "component": "policy_update",
+    "failure_mode": "The policy network is not being updated during training. Policy loss remains at machine epsilon (~1e-7 to 1e-8) throughout training, indicating no meaningful policy gradient computation or application. Combined with zero KL divergence, zero clip fraction, and constant maximum entropy policy, this shows the policy parameters are stalled while the value function continues to learn. The agent cannot improve episodic returns without policy improvements.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 4,
+  "wall_clock_s": 48.766018867492676,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 1,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

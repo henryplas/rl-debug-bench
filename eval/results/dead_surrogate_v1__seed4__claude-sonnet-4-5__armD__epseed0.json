@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed4",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 0,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "The advantages used for policy updates are all zero or effectively zero, preventing any policy learning. While the value function learns normally (evidenced by decreasing value_loss and increasing explained_variance from 0% to 35%), the policy remains completely frozen at its random initialization. This is confirmed by: (1) entropy staying constant at exactly ln(2)=0.6931472 (uniform distribution over 2 actions), (2) policy_loss being essentially zero (~10^-8), (3) approx_kl and clipfrac both remaining exactly 0.0 throughout all 100 iterations, and (4) no improvement in episodic returns. The most likely cause is that advantages are being incorrectly zeroed out, possibly through faulty normalization (e.g., subtracting the mean and dividing by standard deviation when all advantages are identical, or normalization producing NaNs that get replaced with zeros), or through an error in the GAE/advantage calculation that produces zero advantages regardless of the actual TD errors.",
+    "evidence_metrics": [
+      "losses/entropy",
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 6,
+  "wall_clock_s": 87.55985426902771,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 3,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

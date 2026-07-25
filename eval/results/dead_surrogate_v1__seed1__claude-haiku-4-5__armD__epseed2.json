@@ -1,0 +1,32 @@
+{
+  "instance_id": "dead_surrogate_v1__seed1",
+  "model": "claude-haiku-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "Policy loss remains at ~zero throughout training (1e-07 range) despite value function learning, indicating the advantage estimates are near-zero everywhere, preventing policy gradient updates. With zero advantages, the policy receives no meaningful gradient signal to improve, resulting in flat episodic returns. The value function learns to predict returns (explained_variance improves from 0.5% to 42%), but advantages computed from value predictions are essentially zero, suggesting a fundamental issue in advantage calculation (likely subtracting a biased or incorrectly scaled baseline from returns).",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 4,
+  "wall_clock_s": 50.23825430870056,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 1,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

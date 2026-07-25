@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed2",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "optimizer",
+    "failure_mode": "The optimizer is not updating the policy network parameters. Only the value function parameters are being optimized, as evidenced by: (1) policy loss remaining at ~0 throughout training, (2) KL divergence staying at exactly 0, (3) policy entropy remaining constant at ln(2) (the initial uniform distribution), (4) clipfrac being 0, while (5) the value function is learning (explained variance increases from 0.005 to 0.42). This indicates the policy network parameters are not included in the optimizer's parameter groups, causing the policy to never update from its random initialization.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 68.68737554550171,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

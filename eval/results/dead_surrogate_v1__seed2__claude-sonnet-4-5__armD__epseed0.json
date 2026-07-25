@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed2",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 0,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": true,
+  "diagnosis": {
+    "component": "policy_update",
+    "failure_mode": "The policy loss is computed as essentially zero (at machine epsilon ~1e-8) throughout training, preventing any policy updates. This is evidenced by: (1) policy_loss remaining at machine epsilon, (2) approx_kl being exactly 0.0, (3) clipfrac being exactly 0.0, and (4) entropy remaining constant at log(2)\u22480.6931, indicating a frozen uniform random policy. The policy gradients are not flowing, likely due to a bug in the policy loss calculation where either the probability ratios equal exactly 1.0 (suggesting old and new log probabilities are identical) or the loss computation is incorrectly zeroed out. This prevents the policy from learning despite having a non-zero learning rate and functioning value function (as evidenced by slowly increasing explained variance).",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 69.78263473510742,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

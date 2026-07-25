@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed4",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "The advantages are collapsing to zero, preventing any policy updates. Evidence: (1) Policy entropy remains constant at exactly ln(2)=0.6931472 throughout all 100 iterations, indicating the policy outputs a uniform 50/50 distribution and never changes. (2) Approx KL and clipfrac are exactly 0.0 throughout training, confirming zero policy updates. (3) Policy loss is essentially numerical noise (~1e-7), indicating zero gradient signal. (4) However, the value function IS learning (explained variance increases from ~0% to ~42%, and value loss shows structure), proving rewards are being received. The disconnect between a learning value function and a frozen policy strongly indicates advantages are being incorrectly computed or normalized (e.g., normalization with near-zero std, or incorrect GAE computation), causing all advantages to become zero and eliminating the policy gradient signal.",
+    "evidence_metrics": [
+      "losses/entropy",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/policy_loss",
+      "losses/explained_variance",
+      "losses/value_loss"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 74.17917251586914,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

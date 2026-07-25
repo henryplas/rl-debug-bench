@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed1",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "The advantages are being computed or normalized in a way that makes them effectively zero throughout training. This causes the policy gradient to be zero (policy_loss \u2248 0), preventing any policy updates. The policy remains at its initialization (uniform random with entropy = ln(2) \u2248 0.693), while the value function continues to learn normally since it uses actual returns rather than advantages. Evidence: policy_loss is ~1e-7 (essentially zero), approx_kl is exactly 0.0 (no policy change), clipfrac is 0.0 (no gradients to clip), and entropy remains constant at ln(2) throughout all 100 iterations, while explained_variance increases from 0.005 to 0.42 showing the value function is learning.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 71.79418921470642,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

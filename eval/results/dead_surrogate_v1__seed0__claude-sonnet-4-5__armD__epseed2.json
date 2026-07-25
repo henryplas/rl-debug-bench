@@ -1,0 +1,33 @@
+{
+  "instance_id": "dead_surrogate_v1__seed0",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 2,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "The advantages are being computed as zero or constant values, leading to zero policy gradients. The policy remains stuck at initialization (uniform random policy with entropy=ln(2)=0.6931), never updating despite training. The policy loss is essentially zero throughout training, approx_kl=0, and clipfrac=0, indicating no policy updates are occurring. Meanwhile, the value function attempts to learn (non-zero value loss) but has very poor predictions (low explained variance 0.005-0.49). This is consistent with advantages being incorrectly zeroed out, likely due to a bug in the GAE computation, advantage normalization, or the returns-values subtraction.",
+    "evidence_metrics": [
+      "losses/entropy",
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/clipfrac",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 76.31413865089417,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}

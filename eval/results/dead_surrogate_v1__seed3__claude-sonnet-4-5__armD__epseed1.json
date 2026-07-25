@@ -1,0 +1,34 @@
+{
+  "instance_id": "dead_surrogate_v1__seed3",
+  "model": "claude-sonnet-4-5",
+  "arm": "D",
+  "episode_seed": 1,
+  "outcome": null,
+  "localization": null,
+  "localization_binary": null,
+  "component_match": false,
+  "diagnosis": {
+    "component": "advantage_estimation",
+    "failure_mode": "Advantages are not flowing to the policy update. The policy loss remains at zero throughout training (values around 1e-7 to 1e-8), with zero KL divergence and constant entropy at log(2)=0.6931, indicating the policy remains completely random. Meanwhile, the value function trains normally with decreasing value loss and increasing explained variance. This pattern indicates that computed advantages are either all zero, have zero gradient, or are being incorrectly normalized/masked before reaching the policy loss calculation. The most likely cause is advantage normalization producing zero/NaN values (e.g., dividing by zero or near-zero std) or advantages being incorrectly zeroed out during processing.",
+    "evidence_metrics": [
+      "losses/policy_loss",
+      "losses/approx_kl",
+      "losses/old_approx_kl",
+      "losses/clipfrac",
+      "losses/entropy",
+      "losses/explained_variance",
+      "charts/episodic_return"
+    ]
+  },
+  "queried_metrics_before_submit": true,
+  "turns_used": 5,
+  "wall_clock_s": 71.8700180053711,
+  "tool_calls": {
+    "run_training": 1,
+    "list_metric_keys": 1,
+    "get_metrics": 2,
+    "submit": 1
+  },
+  "status": "OK",
+  "hack_attempt": false
+}
