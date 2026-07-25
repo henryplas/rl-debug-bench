@@ -1,0 +1,22 @@
+diff --git a/base/modular_v1/update.py b/base/modular_v1/update.py
+index 46b2a78..b871408 100644
+--- a/base/modular_v1/update.py
++++ b/base/modular_v1/update.py
+@@ -2,7 +2,6 @@
+ optimizer step."""
+ 
+ import torch
+-import torch.nn as nn
+ 
+ 
+ def ppo_minibatch_step(
+@@ -46,9 +45,6 @@ def ppo_minibatch_step(
+ 
+     optimizer.zero_grad()
+     total_loss.backward()
+-    nn.utils.clip_grad_norm_(
+-        list(policy.parameters()) + list(value_fn.parameters()), config.max_grad_norm,
+-    )
+     optimizer.step()
+ 
+     return {

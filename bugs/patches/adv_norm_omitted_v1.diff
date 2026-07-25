@@ -1,0 +1,13 @@
+diff --git a/base/modular_v1/update.py b/base/modular_v1/update.py
+index 46b2a78..8764fbf 100644
+--- a/base/modular_v1/update.py
++++ b/base/modular_v1/update.py
+@@ -24,8 +24,6 @@ def ppo_minibatch_step(
+         clip_fraction = ((probability_ratio - 1.0).abs() > config.clip_coef).float().mean().item()
+ 
+     advantages = minibatch_advantages
+-    if config.norm_adv:
+-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+ 
+     unclipped_objective = -advantages * probability_ratio
+     clipped_objective = -advantages * torch.clamp(probability_ratio, 1 - config.clip_coef, 1 + config.clip_coef)

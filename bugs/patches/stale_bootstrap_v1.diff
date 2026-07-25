@@ -1,0 +1,13 @@
+diff --git a/base/modular_v1/train.py b/base/modular_v1/train.py
+index 49fb0b1..8935868 100644
+--- a/base/modular_v1/train.py
++++ b/base/modular_v1/train.py
+@@ -72,7 +72,7 @@ def main():
+         )
+ 
+         with torch.no_grad():
+-            bootstrap_value = value_fn(current_obs).reshape(1, -1)
++            bootstrap_value = buffer.values[-1].reshape(1, -1)
+         advantages, returns = compute_gae(
+             buffer.rewards, buffer.values, buffer.episode_done,
+             bootstrap_value, current_done, config.gamma, config.gae_lambda,

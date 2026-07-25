@@ -1,0 +1,13 @@
+diff --git a/base/modular_v1/update.py b/base/modular_v1/update.py
+index 46b2a78..398ba71 100644
+--- a/base/modular_v1/update.py
++++ b/base/modular_v1/update.py
+@@ -42,7 +42,7 @@ def ppo_minibatch_step(
+         value_loss = 0.5 * ((current_value - minibatch_returns) ** 2).mean()
+ 
+     entropy_loss = entropy.mean()
+-    total_loss = policy_loss - config.ent_coef * entropy_loss + value_loss * config.vf_coef
++    total_loss = policy_loss + value_loss * config.vf_coef
+ 
+     optimizer.zero_grad()
+     total_loss.backward()

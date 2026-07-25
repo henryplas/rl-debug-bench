@@ -1,4 +1,27 @@
 {
+  "adv_norm_omitted_v1__seed0": {
+    "accepted": false,
+    "base_id": "modular_v1",
+    "broken_baseline": 213.9651165871754,
+    "broken_runs": [
+      192.075,
+      215.7027027027027,
+      234.11764705882354
+    ],
+    "bug_id": "adv_norm_omitted_v1",
+    "clean_baseline": 176.81978062542848,
+    "clean_runs": [
+      164.6326530612245,
+      181.27906976744185,
+      184.54761904761904
+    ],
+    "instance_seed": 0,
+    "margin": -37.14533596174692,
+    "std_broken": 17.207758851941488,
+    "std_clean": 8.720298630164447,
+    "threshold": 51.62327655582446,
+    "total_timesteps": 40000
+  },
   "dead_surrogate_v1__seed0": {
     "accepted": true,
     "broken_baseline": 22.292961082244265,
@@ -132,6 +155,52 @@
     "threshold": 26.16089589049334,
     "total_timesteps": 40000
   },
+  "entropy_omitted_v1__seed0": {
+    "accepted": false,
+    "base_id": "modular_v1",
+    "broken_baseline": 208.8488416554206,
+    "broken_runs": [
+      203.28205128205127,
+      226.28947368421052,
+      196.975
+    ],
+    "bug_id": "entropy_omitted_v1",
+    "clean_baseline": 176.81978062542848,
+    "clean_runs": [
+      164.6326530612245,
+      181.27906976744185,
+      184.54761904761904
+    ],
+    "instance_seed": 0,
+    "margin": -32.029061029992135,
+    "std_broken": 12.598318886299761,
+    "std_clean": 8.720298630164447,
+    "threshold": 37.79495665889928,
+    "total_timesteps": 40000
+  },
+  "grad_clip_omitted_v1__seed0": {
+    "accepted": false,
+    "base_id": "modular_v1",
+    "broken_baseline": 318.03172555043517,
+    "broken_runs": [
+      357.6190476190476,
+      252.51612903225808,
+      343.96
+    ],
+    "bug_id": "grad_clip_omitted_v1",
+    "clean_baseline": 176.81978062542848,
+    "clean_runs": [
+      164.6326530612245,
+      181.27906976744185,
+      184.54761904761904
+    ],
+    "instance_seed": 0,
+    "margin": -141.2119449250067,
+    "std_broken": 46.66092180697027,
+    "std_clean": 8.720298630164447,
+    "threshold": 139.98276542091082,
+    "total_timesteps": 40000
+  },
   "logprob_broadcast_v1__seed0": {
     "accepted": true,
     "broken_baseline": 26.786792700025284,
@@ -240,6 +309,29 @@
     "std_broken": 1.5705122887503409,
     "std_clean": 13.652897903874404,
     "threshold": 40.95869371162321,
+    "total_timesteps": 40000
+  },
+  "stale_bootstrap_v1__seed0": {
+    "accepted": false,
+    "base_id": "modular_v1",
+    "broken_baseline": 211.44544931778975,
+    "broken_runs": [
+      235.9090909090909,
+      227.1081081081081,
+      171.31914893617022
+    ],
+    "bug_id": "stale_bootstrap_v1",
+    "clean_baseline": 176.81978062542848,
+    "clean_runs": [
+      164.6326530612245,
+      181.27906976744185,
+      184.54761904761904
+    ],
+    "instance_seed": 0,
+    "margin": -34.62566869236127,
+    "std_broken": 28.60016679791417,
+    "std_clean": 8.720298630164447,
+    "threshold": 85.80050039374251,
     "total_timesteps": 40000
   }
 }

@@ -142,3 +142,94 @@
     wrong_line bug) is what motivates Lever 3.
   instances: 1
   instance_seeds: [0]
+
+# --- Rejected omission-bug candidates (README.md Finding 2) ---
+# These four all failed the "must degrade performance" rule (README.md
+# invariant 5) -- calibration/baselines.json below shows each one *improved*
+# the clean baseline instead. Kept here, marked rejected, as the committed
+# record behind Finding 2 and the load-bearing design rule it motivated
+# (invariant 6), not as usable bug instances. `make repro`-style tooling
+# should treat rejected: true as "exclude from the active bank."
+
+- bug_id: grad_clip_omitted_v1
+  base_id: modular_v1
+  file: update.py
+  rejected: true
+  bug_class: omission
+  category: rejected_non_load_bearing
+  patch: patches/grad_clip_omitted_v1.diff
+  symptom: "N/A -- rejected before eval; see calibration/baselines.json"
+  detectable_from: [metrics]
+  ground_truth_lines: [49, 50, 51]
+  ground_truth_description: >
+    Removes the nn.utils.clip_grad_norm_(...) call (and its now-unused
+    import) after the backward pass. Gradient clipping is variance-reduction
+    machinery: it caps the rare large update rather than helping the typical
+    one. CartPole-v1 at the 40k-timestep calibration budget apparently never
+    produces an update large enough for that cap to matter, so removing it
+    just lets the optimizer move unconstrained -- which measurably improved
+    the clean baseline rather than degrading it (see calibration/baselines.json).
+  instances: 1
+  instance_seeds: [0]
+
+- bug_id: entropy_omitted_v1
+  base_id: modular_v1
+  file: update.py
+  rejected: true
+  bug_class: omission
+  category: rejected_non_load_bearing
+  patch: patches/entropy_omitted_v1.diff
+  symptom: "N/A -- rejected before eval; see calibration/baselines.json"
+  detectable_from: [metrics]
+  ground_truth_lines: [45]
+  ground_truth_description: >
+    Drops the entropy bonus from the total loss (entropy_loss is still
+    computed and logged, just not included in the backward pass). The
+    entropy bonus exists to keep exploring; CartPole-v1 has two actions,
+    dense uniform reward, and no exploration problem worth solving, so
+    removing the bonus just lets the policy converge faster rather than
+    getting stuck -- measurably improved the clean baseline (see
+    calibration/baselines.json).
+  instances: 1
+  instance_seeds: [0]
+
+- bug_id: adv_norm_omitted_v1
+  base_id: modular_v1
+  file: update.py
+  rejected: true
+  bug_class: omission
+  category: rejected_non_load_bearing
+  patch: patches/adv_norm_omitted_v1.diff
+  symptom: "N/A -- rejected before eval; see calibration/baselines.json"
+  detectable_from: [metrics]
+  ground_truth_lines: [27, 28]
+  ground_truth_description: >
+    Removes the advantage normalization branch entirely (advantages are used
+    at their raw GAE scale). Normalization exists to stabilize updates when
+    advantage scale drifts; CartPole-v1's advantages are already reasonably
+    scaled at this budget, so training on raw advantages measurably improved
+    the clean baseline rather than degrading it (see
+    calibration/baselines.json).
+  instances: 1
+  instance_seeds: [0]
+
+- bug_id: stale_bootstrap_v1
+  base_id: modular_v1
+  file: train.py
+  rejected: true
+  bug_class: omission
+  category: rejected_non_load_bearing
+  patch: patches/stale_bootstrap_v1.diff
+  symptom: "N/A -- rejected before eval; see calibration/baselines.json"
+  detectable_from: [metrics]
+  ground_truth_lines: [75]
+  ground_truth_description: >
+    Replaces the fresh bootstrap value_fn(current_obs) evaluation with the
+    last in-rollout value estimate (buffer.values[-1]), one step stale. This
+    is a plausible bias source in principle (GAE's last-step bootstrap would
+    use a slightly wrong value), but CartPole-v1's short, mostly-truncated
+    episodes and small value-function error at this budget apparently don't
+    make that bias large enough to matter -- measurably improved the clean
+    baseline rather than degrading it (see calibration/baselines.json).
+  instances: 1
+  instance_seeds: [0]
