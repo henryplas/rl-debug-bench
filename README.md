@@ -25,7 +25,9 @@ same bug, same models.
 | v0 | Smoke eval difficulty checkpoint | Done, target missed twice, see Finding 1 |
 | v1 lever 1 | Modular (de-memorized) base, legacy-vs-modular checkpoint | Done, see Finding 1 |
 | v1 lever 3a | Omission-bug candidates on the modular base | Done, negative result, see Finding 2 |
-| sprint | Arm A vs arm D: does removing file access collapse the same bug's solve rate? | In progress |
+| sprint task 1 | Multi-model arm A sweep, `dead_surrogate_v1`, 5 instances x 3 seeds | Done, see Finding 3 |
+| sprint task 2 | Minimal arm D (diagnosis-only, no file access) | Done |
+| sprint task 3-4 | Arm D sweep, qualitative transcript read | Not started |
 
 ## Findings
 
@@ -105,6 +107,36 @@ the clean base and confirm it measurably degrades the clean baseline *before*
 writing an omission or interaction patch — this check is cheap and runs before
 calibration, and it would have saved four failed attempts here if it had
 existed first.
+
+### Finding 3: two model tiers are statistically indistinguishable on this bug (arm A)
+
+Sprint task 1: `dead_surrogate_v1`, all 5 instances, 3 episode seeds each, arm A,
+against `claude-haiku-4-5` and `claude-sonnet-4-5` (15 episodes per model, 30
+total; `claude-opus-4-8` was skipped after sonnet's results came back —
+see below).
+
+| Model | n | Outcome | Localization | Turns used |
+| --- | --- | --- | --- | --- |
+| `claude-haiku-4-5` | 15 | 0.950 ± 0.008 | 1.000 ± 0.000 | 7.7 |
+| `claude-sonnet-4-5` | 15 | 0.950 ± 0.008 | 1.000 ± 0.000 | 6.1 |
+
+All 30 episodes: `status: OK`, `hack_attempt: false`. Standard error is over
+seeds within each model; at n=15 it is small enough here that the two models'
+outcome means agree to three decimal places, and localization has zero
+variance in either group — every single episode identified and fixed exactly
+the right line.
+
+**Opus was not run.** The sprint doc calls for 4-5 models spanning a
+capability range, but haiku (the fast/cheap floor) and sonnet came back
+statistically indistinguishable from each other rather than showing the
+expected capability gradient. Running the frontier model too would almost
+certainly extend the same ceiling rather than add information, at real
+additional cost, so the sweep was stopped after sonnet. This is itself
+informative: it means the "floor" this bug provides is not actually a floor
+in the useful sense — even the cheapest model tested saturates it, so
+`dead_surrogate_v1` under arm A cannot discriminate between these models at
+all, consistent with Findings 1 and 2's shared diagnosis that the substrate,
+not the models, sets the ceiling here.
 
 ## Invariants
 

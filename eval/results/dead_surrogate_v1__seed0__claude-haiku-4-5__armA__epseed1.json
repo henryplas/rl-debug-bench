@@ -1,6 +1,6 @@
 {
   "instance_id": "dead_surrogate_v1__seed0",
-  "model": "claude-sonnet-4-5",
+  "model": "claude-haiku-4-5",
   "arm": "A",
   "episode_seed": 1,
   "outcome": 1.0,
@@ -9,13 +9,13 @@
   "component_match": null,
   "diagnosis": null,
   "queried_metrics_before_submit": null,
-  "turns_used": 7,
-  "wall_clock_s": 57.91140675544739,
+  "turns_used": 15,
+  "wall_clock_s": 77.3362808227539,
   "tool_calls": {
     "list_files": 1,
-    "read_file": 2,
+    "read_file": 8,
+    "run_training": 4,
     "edit_file": 1,
-    "run_training": 2,
     "submit": 1
   },
   "status": "OK",

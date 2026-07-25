@@ -6,8 +6,11 @@
   "outcome": 1.0,
   "localization": 1.0,
   "localization_binary": true,
+  "component_match": null,
+  "diagnosis": null,
+  "queried_metrics_before_submit": null,
   "turns_used": 7,
-  "wall_clock_s": 64.78972816467285,
+  "wall_clock_s": 80.42209196090698,
   "tool_calls": {
     "list_files": 1,
     "read_file": 2,
