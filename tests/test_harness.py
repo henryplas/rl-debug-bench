@@ -138,6 +138,24 @@ def test_toolbox_run_training_then_get_metrics_arm_b(container):
     assert len(metrics["losses/policy_loss"]) >= 1
 
 
+def test_dispatch_stringifies_get_metrics_and_list_metric_keys(container):
+    # Real regression: get_metrics/list_metric_keys return a dict/list on
+    # success, but a provider's tool_result content must be a string. Calling
+    # the bare ToolBox methods (as the test above does) never caught this --
+    # only going through dispatch(), as the real episode loop does, does.
+    box = ToolBox(container, arm="B", episode_seed=0)
+    run_id, _ = box.run_training(iterations=1)
+
+    keys_result = box.dispatch("list_metric_keys", {"run_id": run_id})
+    assert isinstance(keys_result, str)
+    json.loads(keys_result)  # must be valid JSON, not a repr() of a list
+
+    metrics_result = box.dispatch("get_metrics", {"run_id": run_id, "keys": ["losses/policy_loss"]})
+    assert isinstance(metrics_result, str)
+    parsed = json.loads(metrics_result)
+    assert len(parsed["losses/policy_loss"]) >= 1
+
+
 def test_toolbox_metrics_tools_disabled_on_arm_a(container):
     box = ToolBox(container, arm="A", episode_seed=0)
     assert box.get_metrics("run0", keys=["x"]).startswith("error:")

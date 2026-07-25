@@ -7,6 +7,7 @@ get_metrics involve the pinned image's Python/torch environment or a metrics
 store keyed by run_id, so they go through the container / MetricsStore.
 """
 
+import json
 import os
 import time
 
@@ -167,6 +168,13 @@ class WorkspaceEscapeError(ValueError):
     pass
 
 
+def _stringify(result):
+    """Tool results returned to the model must be strings (or provider-native
+    content blocks); list_metric_keys/get_metrics return a list/dict on
+    success (an error path returns a plain string already)."""
+    return result if isinstance(result, str) else json.dumps(result)
+
+
 class ToolBox:
     """Binds the tool implementations to one episode's container and arm."""
 
@@ -317,9 +325,9 @@ class ToolBox:
                 run_id, tail = self.run_training(max_wall_s=max_wall_s, **tool_input)
                 return f"run_id: {run_id}\n{tail}"
             if name == "list_metric_keys":
-                return self.list_metric_keys(**tool_input)
+                return _stringify(self.list_metric_keys(**tool_input))
             if name == "get_metrics":
-                return self.get_metrics(**tool_input)
+                return _stringify(self.get_metrics(**tool_input))
             if name == "submit":
                 return self.submit(**tool_input)
             return f"error: unknown tool {name!r}"
