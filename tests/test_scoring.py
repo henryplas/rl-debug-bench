@@ -144,3 +144,54 @@ def test_score_episode_end_to_end(tmp_path):
 
     written = json.loads((results_dir / os.path.basename(episode_result.transcript_path)).read_text())
     assert written == results
+
+
+# --- arm D scoring (tasks/weekend-sprint.md task 2) ---
+
+def _score_in_tmp_dir(transcript_path, tmp_path):
+    results_dir = tmp_path / "results"
+    import scoring.score_episode as score_episode_module
+
+    original_results_dir = score_episode_module.RESULTS_DIR
+    score_episode_module.RESULTS_DIR = str(results_dir)
+    try:
+        return score_episode(transcript_path)
+    finally:
+        score_episode_module.RESULTS_DIR = original_results_dir
+
+
+def test_score_episode_arm_d_correct_component_match(tmp_path):
+    plan = [
+        ("run_training", {"iterations": 1}),
+        ("get_metrics", {"run_id": "run0", "keys": ["losses/policy_loss"]}),
+        ("submit", {"component": "policy_update", "failure_mode": "ratio pinned at 1.0", "evidence_metrics": ["policy_loss"]}),
+    ]
+    episode_result = run_episode(
+        bug_id="dead_surrogate_v1", instance_seed=0, episode_seed=20, arm="D",
+        model_adapter=ScriptedAdapter(plan), model_name="scripted-arm-d-scoring",
+        turn_cap=10, wall_clock_cap_s=180, transcripts_dir=str(tmp_path),
+    )
+    assert episode_result.status == "OK"
+    results = _score_in_tmp_dir(episode_result.transcript_path, tmp_path)
+
+    assert results["outcome"] is None  # no patch re-run in arm D
+    assert results["localization"] is None
+    assert results["component_match"] is True
+    assert results["queried_metrics_before_submit"] is True
+    assert results["diagnosis"]["component"] == "policy_update"
+
+
+def test_score_episode_arm_d_incorrect_component_no_match(tmp_path):
+    plan = [
+        ("run_training", {"iterations": 1}),
+        ("submit", {"component": "reward", "failure_mode": "wrong guess", "evidence_metrics": []}),
+    ]
+    episode_result = run_episode(
+        bug_id="dead_surrogate_v1", instance_seed=0, episode_seed=21, arm="D",
+        model_adapter=ScriptedAdapter(plan), model_name="scripted-arm-d-scoring",
+        turn_cap=10, wall_clock_cap_s=180, transcripts_dir=str(tmp_path),
+    )
+    results = _score_in_tmp_dir(episode_result.transcript_path, tmp_path)
+
+    assert results["component_match"] is False
+    assert results["queried_metrics_before_submit"] is False  # never called get_metrics/list_metric_keys

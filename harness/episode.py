@@ -14,6 +14,7 @@ import yaml
 from harness import bases
 from harness.container import EpisodeContainer
 from harness.tools import ToolBox, tool_schemas_for_arm
+from scoring.components import COMPONENTS
 from scoring.integrity import snapshot_hash
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +29,22 @@ SYSTEM_PROMPT_TEMPLATE = (
     "Reported symptom: {symptom}\n\n"
     "Use the available tools to diagnose and fix the bug. "
     "Call submit once you believe it is fixed."
+)
+
+# Arm D (tasks/weekend-sprint.md task 2): no file access of any kind. The
+# component list is embedded so the model knows the label space; do not hint
+# at the bug category or category name beyond the symptom itself.
+SYSTEM_PROMPT_TEMPLATE_ARM_D = (
+    "There is a bug in an RL training run. You have no file access of any "
+    "kind -- you cannot see the source code, the config, or the directory "
+    "structure.\n"
+    "Reported symptom: {symptom}\n\n"
+    "Use run_training and the metrics tools (get_metrics, list_metric_keys) "
+    "to diagnose the bug from training dynamics alone. When ready, call "
+    "submit with a structured diagnosis: `component` (exactly one of: "
+    + ", ".join(COMPONENTS) + "), `failure_mode` (a free-text description of "
+    "the failure mechanism), and `evidence_metrics` (the metric keys that "
+    "support your diagnosis)."
 )
 
 NUDGE_MESSAGE = "Continue by calling a tool, or call submit() once you believe the bug is fixed."
@@ -70,7 +87,8 @@ def run_episode(
     entry = _load_registry_entry(bug_id)
     base_id = entry.get("base_id", "legacy_cleanrl")
     instance_id = f"{bug_id}__seed{instance_seed}"
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(symptom=entry["symptom"])
+    prompt_template = SYSTEM_PROMPT_TEMPLATE_ARM_D if arm == "D" else SYSTEM_PROMPT_TEMPLATE
+    system_prompt = prompt_template.format(symptom=entry["symptom"])
     tool_schemas = tool_schemas_for_arm(arm)
 
     transcript = {
@@ -94,6 +112,7 @@ def run_episode(
     # even though the agent's tools can't reach these paths in the first place.
     integrity_snapshot_before = snapshot_hash()
     final_workspace_files = None
+    diagnosis = None
 
     with EpisodeContainer(base_id=base_id, patch_relpath=entry["patch"]) as container:
         toolbox = ToolBox(container, arm=arm, episode_seed=episode_seed)
@@ -164,6 +183,8 @@ def run_episode(
                 with open(fpath) as f:
                     final_workspace_files[fname] = f.read()
 
+        diagnosis = toolbox.diagnosis
+
     wall_clock_s = time.time() - start
     status = status or "ERROR"
 
@@ -178,6 +199,7 @@ def run_episode(
     transcript["tool_call_counts"] = dict(tool_call_counts)
     transcript["integrity_snapshot_before"] = integrity_snapshot_before
     transcript["final_workspace_files"] = final_workspace_files
+    transcript["diagnosis"] = diagnosis
     with open(transcript_path, "w") as f:
         json.dump(transcript, f, indent=2, default=str)
 

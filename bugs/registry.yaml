@@ -10,6 +10,7 @@
   file: ppo_cartpole.py
   tier: easy
   bug_class: wrong_line
+  component: policy_update
   category: silent_gradient
   patch: patches/dead_surrogate_v1.diff
   symptom: "Episodic return is flat after training. No errors."
@@ -48,6 +49,7 @@
   file: ppo_cartpole.py
   tier: easy
   bug_class: wrong_line
+  component: policy_update
   category: silent_shape_bug
   patch: patches/logprob_broadcast_v1.diff
   symptom: "Training is unstable and performance is much worse than expected. No errors."
@@ -98,6 +100,7 @@
   file: update.py
   tier: medium
   bug_class: wrong_line
+  component: policy_update
   category: silent_gradient
   patch: patches/dead_surrogate_v1_modular.diff
   symptom: "Episodic return is flat after training. No errors."

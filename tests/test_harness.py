@@ -205,3 +205,88 @@ def test_run_episode_hits_wall_clock_cap(tmp_path):
         transcripts_dir=str(tmp_path),
     )
     assert result.status == "WALL_CLOCK_CAP"
+
+
+def test_dispatch_returns_error_string_for_malformed_arguments(container):
+    box = ToolBox(container, arm="A", episode_seed=0)
+    # A model passing a list where an int is expected (a real failure mode
+    # observed from a live model) must not crash the episode loop.
+    result = box.dispatch("read_file", {"path": "ppo_cartpole.py", "start": [245, 295]})
+    assert result.startswith("error:")
+
+    result = box.dispatch("run_training", {"iterations": "not-a-number"})
+    assert result.startswith("error:")
+
+
+def test_dispatch_returns_error_string_for_missing_required_argument(container):
+    box = ToolBox(container, arm="A", episode_seed=0)
+    result = box.dispatch("edit_file", {"path": "ppo_cartpole.py"})  # missing old_str/new_str
+    assert result.startswith("error:")
+
+
+def test_arm_d_exposes_only_metrics_and_training_tools():
+    schemas = tool_schemas_for_arm("D")
+    names = {s["name"] for s in schemas}
+    assert names == {"run_training", "get_metrics", "list_metric_keys", "submit"}
+
+
+def test_arm_d_submit_schema_requires_diagnosis_fields():
+    schemas = tool_schemas_for_arm("D")
+    submit_schema = next(s for s in schemas if s["name"] == "submit")
+    assert set(submit_schema["input_schema"]["required"]) == {"component", "failure_mode", "evidence_metrics"}
+
+
+def test_toolbox_submit_captures_diagnosis(container):
+    box = ToolBox(container, arm="D", episode_seed=0)
+    assert box.diagnosis is None
+    box.submit(component="policy_update", failure_mode="ratio always 1.0", evidence_metrics=["policy_loss"])
+    assert box.diagnosis == {
+        "component": "policy_update",
+        "failure_mode": "ratio always 1.0",
+        "evidence_metrics": ["policy_loss"],
+    }
+
+
+def test_toolbox_file_tools_blocked_on_arm_d_even_if_called(container):
+    # The tool schema omits these for arm D, but the enforcement must not rely
+    # on the schema alone -- a model calling a tool outside its advertised
+    # list must still be refused, not silently given file access.
+    box = ToolBox(container, arm="D", episode_seed=0)
+    assert box.list_files(".").startswith("error:")
+    assert box.read_file("ppo_cartpole.py").startswith("error:")
+    assert box.edit_file("ppo_cartpole.py", "x", "y").startswith("error:")
+
+
+def test_toolbox_get_metrics_available_on_arm_d(container):
+    box = ToolBox(container, arm="D", episode_seed=0)
+    run_id, _ = box.run_training(iterations=1)
+    assert "error" not in box.list_metric_keys(run_id)
+    metrics = box.get_metrics(run_id, keys=["losses/policy_loss"])
+    assert len(metrics["losses/policy_loss"]) >= 1
+
+
+def test_run_episode_arm_d_no_file_tools_and_diagnosis_captured(tmp_path):
+    plan = [
+        ("run_training", {"iterations": 1}),
+        ("get_metrics", {"run_id": "run0", "keys": ["losses/policy_loss"]}),
+        ("submit", {"component": "policy_update", "failure_mode": "ratio pinned at 1.0", "evidence_metrics": ["policy_loss"]}),
+    ]
+    result = run_episode(
+        bug_id="dead_surrogate_v1",
+        instance_seed=0,
+        episode_seed=4,
+        arm="D",
+        model_adapter=ScriptedAdapter(plan),
+        model_name="scripted-arm-d-test",
+        turn_cap=10,
+        wall_clock_cap_s=180,
+        transcripts_dir=str(tmp_path),
+    )
+    assert result.status == "OK"
+    with open(result.transcript_path) as f:
+        transcript = json.load(f)
+    assert transcript["diagnosis"] == {
+        "component": "policy_update",
+        "failure_mode": "ratio pinned at 1.0",
+        "evidence_metrics": ["policy_loss"],
+    }
