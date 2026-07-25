@@ -1,71 +1,163 @@
 # rl-debug-bench
 
 An RL environment that evaluates language models on diagnosing and fixing silent
-bugs in reinforcement learning training code: bugs that don't throw errors or
-fail a test, they just cause a policy to train badly or not at all.
+bugs in reinforcement learning training code: bugs that throw no error, fail no
+test, and simply cause a policy to train badly or not at all.
 
-The full v0 design spec and build order this project is being built against
-lives in [`tasks/tasks-list.md`](tasks/tasks-list.md). This file is a running
-status summary — read the tasks list for the actual specification.
+Specs: [`tasks/tasks-list.md`](tasks/tasks-list.md) (v0 harness spec),
+[`tasks/hardness-v1.md`](tasks/hardness-v1.md) (v1 difficulty redesign),
+[`tasks/roadmap.md`](tasks/roadmap.md) (full project plan),
+[`tasks/weekend-sprint.md`](tasks/weekend-sprint.md) (current, scoped sprint —
+supersedes the other two for its duration). This file is the running status
+summary.
 
-## Status: build order steps 1–5 done, step 6 (smoke eval) in progress
+## Status
 
-| Step | What | Status |
-|---|---|---|
-| 1 | Repo skeleton, vendored CleanRL PPO base, determinism tests | Done |
-| 2 | `dead_surrogate_v1` bug patch + registry entry | Done (rewritten once, see below) |
-| 3 | Calibration (clean vs. broken baseline, noise threshold) | Done — all 5 instances accepted with wide margins |
-| 4 | Harness: Docker container, tools, episode loop, transcripts (arm A) | Done |
-| 5 | Scoring: outcome, localization, integrity/hack-detection | Done |
-| 6 | Smoke eval: one model, one bug, 3 seeds — the difficulty checkpoint | In progress |
+The v0 harness (container, tools, episode loop, scoring) is complete. v0
+difficulty missed its target twice. The failure is diagnosed (see Findings
+below), and the current work — the weekend sprint — tests that diagnosis
+directly by comparing an arm with file access against one without it, on the
+same bug, same models.
 
-### Where step 6 stands
+| Phase | What | Status |
+| --- | --- | --- |
+| v0 | Harness, calibration, scoring, `dead_surrogate_v1` (one bug type) | Done |
+| v0 | Smoke eval difficulty checkpoint | Done, target missed twice, see Finding 1 |
+| v1 lever 1 | Modular (de-memorized) base, legacy-vs-modular checkpoint | Done, see Finding 1 |
+| v1 lever 3a | Omission-bug candidates on the modular base | Done, negative result, see Finding 2 |
+| sprint | Arm A vs arm D: does removing file access collapse the same bug's solve rate? | In progress |
 
-The README's own build order treats this as a hard stop: test difficulty
-after the *first* bug type, before building anything else, because clearing
-~80% overall means the bug bank is too easy and needs to be harder before
-more is built on top of it.
+## Findings
 
-The first version of `dead_surrogate_v1` (`logratio = newlogprob -
-newlogprob`) was mathematically correct — it produces a true zero gradient,
-not just a numerically-zero one — but a `claude-sonnet-4-5` smoke eval solved
-it 3/3 times, sometimes without even running training, because the bug is a
-visible code smell (a variable subtracted from itself) rather than something
-that requires behavioral diagnosis.
+### Finding 1: v0 measured memorization, not diagnosis
 
-The patch has been rewritten to use the same underlying mechanism (verified
-with a standalone autograd check) expressed as a redundant, non-obvious
-recompute of the "old" log-prob instead of a literal self-subtraction — it
-now requires recognizing that the old log-prob should come from the stored
-rollout buffer, not a fresh forward pass. Calibration was re-run and is
-byte-identical to the original patch's (confirming it's the same bug
-mechanistically). A second smoke eval against the revised patch is the
-current in-flight work.
+**Attempt 1.** `dead_surrogate_v1` was implemented as
+`logratio = newlogprob - newlogprob`. This is a true zero gradient, not merely a
+numerically small one, verified with a standalone autograd check. A
+`claude-sonnet-4-5` smoke eval (3 episode seeds) solved it **3/3**, sometimes
+without running training at all.
+
+**Attempt 2.** The patch was rewritten to preserve the identical mechanism while
+removing the visual tell: instead of a literal self-subtraction, the "old"
+log-prob is recomputed with a redundant fresh forward pass. Solving it requires
+recognizing that the old log-prob must come from the stored rollout buffer, not
+a fresh policy evaluation. Calibration was re-run and came out byte-identical to
+attempt 1's, confirming the bug is mechanistically unchanged. Result: **3/3**
+again.
+
+**Attempt 3, the legacy-vs-modular checkpoint (`tasks/hardness-v1.md` lever 1).**
+The base was reimplemented as a 7-module package (`base/modular_v1/`) with
+de-CleanRL'd internal naming and structure, verified deterministic and
+equivalent to the legacy base within seed noise (clean baseline 176.8 vs.
+legacy's 175.5 at matched seeds). The same bug, ported unchanged, was smoke-evaled
+on both bases, 3 seeds each: legacy **3/3**, modular **3/3**, delta **0.000**.
+The model needed substantially more exploration on the modular base (8
+`read_file` calls across the module structure vs. 1-2 on the single legacy
+file, visible directly in the transcripts) but still found and fixed the bug
+every time.
+
+**Diagnosis.** De-memorizing the code did not move the needle, which sharpens
+rather than overturns the original hypothesis: the model isn't shortcutting via
+a literal diff against a memorized reference file. It's recognizing a
+well-understood PPO implementation mistake ("the old log-prob must come from
+the stored rollout policy, not a fresh recompute") from domain knowledge of the
+algorithm, independent of code layout or naming. Three properties of the
+substrate let this happen regardless of memorization:
+
+1. The bug is a single wrong line (`bug_class: wrong_line`), and once a model
+   understands PPO, that class of mistake is recognizable on sight regardless
+   of variable names.
+2. The base fits inside a handful of `read_file` calls even split across
+   modules, so exhaustive reading is still cheap.
+3. There is a well-known canonical correct form for "the PPO ratio," so there
+   is always a reference to reason against, memorized or not.
+
+### Finding 2: non-load-bearing omissions don't degrade CartPole
+
+Four omission-bug candidates were built on the modular base and tested across 3
+seeds each at the 40k-timestep calibration budget: **gradient clipping
+removed**, **entropy bonus dropped from the total loss**, **advantage
+normalization removed**, and **a stale (one-step-old) bootstrap value reused
+instead of a fresh critic evaluation**. All four *improved* mean final return
+relative to clean training, at every seed tested. None were viable bug
+instances.
+
+This is the expected result, not a fluke. Gradient clipping, the entropy bonus,
+and advantage normalization are variance-reduction and stability machinery that
+pays off on hard or unstable tasks and costs throughput on easy, well-scaled
+ones. CartPole-v1 has two actions, dense uniform reward, essentially no
+exploration problem, and advantages that are already well-scaled — removing
+safety machinery that isn't doing any work cannot degrade the task, it just
+lets the optimizer move faster. (The stale-bootstrap case is a plausible bias
+source in principle, but CartPole's short, mostly-truncated episodes and small
+value-function error apparently don't make that bias large enough to matter at
+this budget either.)
+
+**Do not retry these candidates at a longer training budget.** CartPole-v1 caps
+episodic return at 500; both the clean and broken arms saturate near the cap
+given enough steps, producing a ceiling effect that hides any real degradation
+rather than revealing one — more budget makes the comparison *less*
+informative, not more.
+
+**Design rule (added to Invariants below):** a bug class is only a valid task
+on a base where the affected mechanism is load-bearing. Ablate the mechanism on
+the clean base and confirm it measurably degrades the clean baseline *before*
+writing an omission or interaction patch — this check is cheap and runs before
+calibration, and it would have saved four failed attempts here if it had
+existed first.
+
+## Invariants
+
+No change may violate these.
+
+1. **No LLM anywhere in the reward path.** Every scoring component is
+   computable by a deterministic script.
+2. **Determinism.** Same instance plus same seed gives the same score. Seed
+   Python, NumPy, Torch; pin `CUBLAS_WORKSPACE_CONFIG`.
+3. **The agent cannot touch the scorer.** Scoring lives outside the writable
+   workspace. Hash-check before and after every episode; a mismatch marks the
+   episode `INVALID`.
+4. **No network access inside the agent container.**
+5. **A bug that does not degrade performance is not a task.** The clean-vs-broken
+   gap must exceed 3x the larger seed standard deviation, or the instance is
+   rejected.
+6. **A bug class is only valid on a base where the affected mechanism is
+   load-bearing.** Ablate the mechanism on the clean base and confirm it
+   measurably degrades the clean baseline before writing an omission or
+   interaction patch. If it does not degrade the baseline, the task is wrong,
+   not the bug — this check is cheap and runs before calibration. (Added after
+   Finding 2.)
+7. **Difficulty comes from the bug and the search space, never from unreadable
+   code.** Bases stay idiomatic; obfuscation is not a valid difficulty source.
+8. **Log every trajectory in full.** Transcripts are a primary output, not a
+   byproduct.
 
 ## Repository layout
 
-See `tasks/tasks-list.md` section 4 for the intended full layout. As built so
-far:
-
 ```
-base/        vendored, unmodified CleanRL PPO (base/ppo_cartpole.py)
-bugs/        registry.yaml + patches/ (one bug type so far: dead_surrogate_v1)
-calibration/ build_baselines.py + committed baselines.json
-harness/     container lifecycle, tools, episode loop, metrics store, model adapters
-scoring/     outcome, localization, integrity/hack-detection, score_episode entrypoint
-tests/       pytest suite (fast tests + a `slow` marker for real-training tests)
-eval/        transcripts/ and results/ (populated once episodes are run)
+base/legacy_cleanrl/   vendored, unmodified CleanRL PPO -- the memorization control
+base/modular_v1/       7-module reimplementation, same algorithm, de-CleanRL'd naming
+bugs/                  registry.yaml + patches/
+calibration/           build_baselines.py + committed baselines.json
+harness/               container lifecycle, tools, episode loop, metrics store, model adapters, base registry
+scoring/                outcome, localization, integrity/hack-detection, score_episode entrypoint
+tests/                 pytest suite (fast tests + a `slow` marker for real-training tests)
+eval/                  transcripts/ and results/ (committed episode logs)
 ```
 
 ## Running it
 
 ```
-make install        # pip install -e ".[dev]"
+make install         # pip install -e ".[dev]"
 make test-fast       # everything except real-training tests
-make test            # full suite, ~7 min (real Docker training runs)
-python calibration/build_baselines.py   # regenerate calibration/baselines.json
+make test            # full suite, real Docker training runs
+python calibration/build_baselines.py    # regenerate calibration/baselines.json
 ```
 
-Running an actual episode against a live model needs a provider API key
-(currently `ANTHROPIC_API_KEY`, used via `harness.models.AnthropicAdapter`).
-Keys are kept in a local, gitignored `.env` file — never committed.
+Running a live episode needs a provider API key (`ANTHROPIC_API_KEY`, via
+`harness.models.AnthropicAdapter`). Keys live in a gitignored `.env` and are
+never committed.
+
+## License
+
+MIT. The vendored CleanRL base (`base/legacy_cleanrl/`) is MIT and unmodified.
